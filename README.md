@@ -1,27 +1,82 @@
-# MyFirstApp
+# SERVICES AND DEPENDENCY INJECTION
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.0.0.
+\*Important: The Angular injector for services is Heirarchical - it not only provides the service for the component it
+is passed into, but for all that component's child components.
 
-## Development server
+Ex: If you provide a service in the App Module, the SAME INSTANCE of that service is available throughout the
+entire application.
+NOTE: Instances of the service do not propogate up, they only go down to the children (so if you provide the service
+to a child component whose parent already has it provided, that instance will propogate down to it's children and not
+the one from the parent component)
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+    GOTCHA: If you provide a service on a component that has no children (at the bottom of a heirarchy), and the SAME
+    service is provided to a parent component of it, then the instance provided in the bottom level component will
+    overwrite the downwards propagated instance of that service from a parent.  This can lead to overwriting data from
+    a service in a parent that you want passed down.
 
-## Code scaffolding
+    Solution: remove the service from the providers array in the child component to retain the same instance of the service
+              from the parent.
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+## CREATING A SERVICE:
 
-## Build
+- Place general services in the app folder, or more specific services in a shared/ folder
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+- Name service files with a .service.ts extension. Ex: `logging.service.ts`
 
-## Running unit tests
+- A service is a normal TypeScript class and does not need a decorator.
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+- You do not manually create instances of service classes you create, you use Angular's dependency injector to do that
+  in your component so you have access to the service helper methods.
 
-## Running end-to-end tests
+1. Create a class named after the service and export it:
+   Ex: `export class LoggingService {}`
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+2. Create helper methods in the class that will be used with the service
 
-## Further help
+Ex:
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+```
+export class LoggingService {
+  logStatusChange(status: string) {
+    console.log("A server status changed: " + status);
+  }
+}
+```
+
+3. Add the service to a component:
+
+   1. add constructor and inject the service into it
+   2. add providers to decorator config and pass in the service class
+
+   -Add a constructor to the component class which assigns a property to the service class.
+
+   - the type of the argument must be the service class you created.
+
+- Angular will see that the component requires the class type as an argument and will instantiate it for you
+  when constructing the component, and then assign it to the property because of the private accessor
+
+- Finally add a providers property to the @Component config object, and set it to an array containing the types of
+  the services (their classes)
+
+Ex in the class component ts file:
+
+```
+ ..imports
+ import { LoggingService } from "../logging.service";
+
+ @Component({
+     ...,
+     providers:[LoggingService]
+ })
+ export class NewAccountComponent {
+   @Output() accountAdded = new EventEmitter<{ name: string; status: string }>();
+
+   constructor(private loggingService: LoggingService) {}
+
+
+   onCreateAccount(accountName: string, accountStatus: string) {
+     ...
+     // use the service:
+     this.loggingService.logStatusChange(accountStatus);
+   }
+```

@@ -80,3 +80,86 @@ Ex in the class component ts file:
      this.loggingService.logStatusChange(accountStatus);
    }
 ```
+
+### INJECTING A SERVICE INTO ANOTHER SERVICE
+
+- You can have services use other services (i.e. one service uses a logging service to log something whenever
+  one of it's methods is called)
+
+1.  You cannot do this at the component level, you need to add the service to inject to another in the app.module.ts
+    providers.
+
+    Ex in app.module.ts:
+
+    ```
+    @NgModule({
+       declarations: [AppComponent, AccountComponent, NewAccountComponent],
+       imports: [BrowserModule, FormsModule],
+       providers: [AccountsService, LoggingService],
+       bootstrap: [AppComponent]
+     })
+    ```
+
+
+    2) Inject the service into the other service's contructor and use the service:
+
+    Ex:
+    ```
+    export class AccountsService {
+      ...
+
+      constructor(private loggingService: LoggingService) {}
+
+      addAccount(name: string, status: string) {
+        this.accounts.push({ name, status });
+        this.loggingService.logStatusChange(status);
+      }
+      ...
+    }
+    ```
+    3) Set up meta data for the service consuming the other injected service.
+       - Angular needs some meta data (i.e. provided on the @Component decorator) to inject the service into another
+       - Use @Injectable() decorator on the service you want to inject another into.
+
+       Ex:
+
+          ```
+          import { Injectable } from '@angular/core'
+
+          @Injectable()
+          export class AccountsService {
+            ...
+
+            constructor(private loggingService: LoggingService) {}
+            ...
+          }
+    ```
+
+### NOTE:
+
+If you're using Angular 6+ (check your package.json to find out), you can provide application-wide services in a
+different way.
+
+Instead of adding a service class to the providers[] array in AppModule , you can set the following config in @Injectable() :
+
+```
+@Injectable({providedIn: 'root'})
+export class MyService { ... }
+This is exactly the same as:
+
+export class MyService { ... }
+and
+
+import { MyService } from './path/to/my.service';
+
+@NgModule({
+    ...
+    providers: [MyService]
+})
+export class AppModule { ... }
+```
+
+Using this new syntax is completely optional, the traditional syntax (using providers[] ) will still work. The
+"new syntax" does offer one advantage though: Services can be loaded lazily by Angular (behind the scenes) and
+redundant code can be removed automatically. This can lead to a better performance and loading speed - though
+this really only kicks in for bigger services and apps in general.

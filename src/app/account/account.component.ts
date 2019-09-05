@@ -17,5 +17,7 @@ export class AccountComponent {
 
   onSetTo(status: string) {
     this.accountsService.updateStatus(this.id, status);
+    // use event emitter in service to emit an event to outside components(new-account component) which can listen for it:
+    this.accountsService.statusUpdated.emit(status);
   }
 }
